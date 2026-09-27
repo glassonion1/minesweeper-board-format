@@ -10,11 +10,17 @@
 const ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 
+/**
+ * Two grids of the same shape. `mines[row][col]` is whether a mine is there,
+ * `flagged[row][col]` whether a flag was on it when the game ended.
+ *
+ * A flag on a square with no mine is dropped. On a won board there are none:
+ * a flag sits on an unopened square, and an unopened square with no mine
+ * means you haven't won.
+ */
 export type Board = {
-  /** mines[row][col] — true where a mine is */
   mines: boolean[][]
-  /** one entry per mine, in row-major order of the mines */
-  flags: boolean[]
+  flagged: boolean[][]
 }
 
 export type Params = {
@@ -25,7 +31,10 @@ export type Params = {
 }
 
 export function encode(board: Board): Params {
-  const bits = [...board.mines.flat(), ...board.flags]
+  const mines = board.mines.flat()
+  const flagged = board.flagged.flat()
+  // The mines, then the flags of the mined squares in the same order.
+  const bits = [...mines, ...flagged.filter((_, i) => mines[i])]
 
   // Six bits to a character. Reading past the end of bits gives undefined,
   // which packs as a zero — that is the padding rule, so there is no
@@ -61,9 +70,21 @@ export function decode(b: string, mf: string): Board | null {
   for (let i = 0; i < cells; i++) if (bits[i]) mineCount++
   if (bits.length !== Math.ceil((cells + mineCount) / 6) * 6) return null
 
+  // The flag bits run in the same order as the mines, so walking the squares
+  // in order and taking the next one each time a mine turns up puts them back.
   const mines: boolean[][] = []
+  const flagged: boolean[][] = []
+  let next = cells
   for (let row = 0; row < height; row++) {
-    mines.push(bits.slice(row * width, (row + 1) * width))
+    const mineRow: boolean[] = []
+    const flagRow: boolean[] = []
+    for (let col = 0; col < width; col++) {
+      const isMine = bits[row * width + col]
+      mineRow.push(isMine)
+      flagRow.push(isMine ? bits[next++] : false)
+    }
+    mines.push(mineRow)
+    flagged.push(flagRow)
   }
-  return { mines, flags: bits.slice(cells, cells + mineCount) }
+  return { mines, flagged }
 }

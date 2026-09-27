@@ -169,7 +169,9 @@ should not mean two things.
 ## Reference implementation
 
 [`minesweeper-board.ts`](minesweeper-board.ts) — encode and decode, no
-dependencies, 69 lines including the types, the comments and the validation.
+dependencies, 90 lines including the types, the comments and the validation.
+It takes two grids of the same shape — where the mines are, and where the flags
+were — so there is no order to line up by hand.
 
 [`check.ts`](check.ts) runs it against every number on this page.
 

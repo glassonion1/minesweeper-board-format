@@ -9,6 +9,8 @@ const ok = (name: string, condition: boolean) => {
   if (!condition) failures++
   console.log(`${condition ? 'ok   ' : 'FAIL '}${name}`)
 }
+const same = (a: unknown, b: unknown) =>
+  JSON.stringify(a) === JSON.stringify(b)
 
 // The example board from the README. F is a flagged mine, * an unflagged one,
 // everything else an opened square.
@@ -23,10 +25,9 @@ const art = [
   '1F1..111.',
   '111......'
 ]
-const isMine = (ch: string) => ch === 'F' || ch === '*'
 const board: Board = {
-  mines: art.map((row) => [...row].map(isMine)),
-  flags: art.flatMap((row) => [...row].filter(isMine).map((ch) => ch === 'F'))
+  mines: art.map((row) => [...row].map((ch) => ch === 'F' || ch === '*')),
+  flagged: art.map((row) => [...row].map((ch) => ch === 'F'))
 }
 
 const { b, mf } = encode(board)
@@ -35,36 +36,42 @@ ok('b is 0909', b === '0909')
 ok('mf matches the string in the README', mf === 'kAAQogCAIAiAAHdg')
 
 const back = decode(b, mf)
-ok('round trip: mines', JSON.stringify(back?.mines) === JSON.stringify(board.mines))
-ok('round trip: flags', JSON.stringify(back?.flags) === JSON.stringify(board.flags))
+ok('round trip: mines', same(back?.mines, board.mines))
+ok('round trip: flags', same(back?.flagged, board.flagged))
 ok(
   '10 mines, 8 of them flagged',
-  back?.flags.length === 10 && back?.flags.filter(Boolean).length === 8
+  board.mines.flat().filter(Boolean).length === 10 &&
+    back?.flagged.flat().filter(Boolean).length === 8
 )
+
+// A flag on a square with no mine is dropped, and the string is unchanged.
+const stray: Board = {
+  mines: board.mines,
+  flagged: board.flagged.map((row, r) => row.map((f, c) => f || (r === 8 && c === 8)))
+}
+ok('a flag with no mine under it is dropped', encode(stray).mf === mf)
 
 // Expert
 const big: boolean[][] = []
-const bigFlags: boolean[] = []
+const bigFlags: boolean[][] = []
 let placed = 0
 for (let row = 0; row < 16; row++) {
-  const line: boolean[] = []
+  const mineRow: boolean[] = []
+  const flagRow: boolean[] = []
   for (let col = 0; col < 30; col++) {
     const mine = placed < 99 && (row * 30 + col) % 4 === 0
-    line.push(mine)
-    if (mine) {
-      bigFlags.push(placed % 3 !== 0)
-      placed++
-    }
+    mineRow.push(mine)
+    flagRow.push(mine && placed % 3 !== 0)
+    if (mine) placed++
   }
-  big.push(line)
+  big.push(mineRow)
+  bigFlags.push(flagRow)
 }
-const expert = encode({ mines: big, flags: bigFlags })
+const expert = encode({ mines: big, flagged: bigFlags })
 console.log(`expert: b = ${expert.b}  ${expert.mf.length} chars`)
 ok('expert is 3016 and 97 characters', expert.b === '3016' && expert.mf.length === 97)
-ok(
-  'expert round trips',
-  JSON.stringify(decode(expert.b, expert.mf)?.mines) === JSON.stringify(big)
-)
+ok('expert round trips', same(decode(expert.b, expert.mf)?.mines, big))
+ok('expert flags round trip', same(decode(expert.b, expert.mf)?.flagged, bigFlags))
 
 // The comparison in "Relation to the existing b= / m= format"
 const sixBits = Math.ceil((30 * 16) / 6)
