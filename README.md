@@ -179,4 +179,4 @@ node --experimental-strip-types check.ts
 
 ## Licence
 
-CC0. Take it.
+MIT. The format itself is nobody's to own — implement it however you like.

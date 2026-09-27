@@ -1,5 +1,5 @@
 // A cleared Minesweeper board in a query string.
-// No dependencies. Public domain (CC0).
+// No dependencies. MIT licensed — see LICENSE.
 
 const ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
