@@ -25,10 +25,11 @@ export type Params = {
 }
 
 export function encode(board: Board): Params {
-  const bits: boolean[] = []
-  for (const row of board.mines) for (const isMine of row) bits.push(isMine)
-  for (const flagged of board.flags) bits.push(flagged)
+  const bits = [...board.mines.flat(), ...board.flags]
 
+  // Six bits to a character. Reading past the end of bits gives undefined,
+  // which packs as a zero — that is the padding rule, so there is no
+  // special case for the last group.
   let mf = ''
   for (let i = 0; i < bits.length; i += 6) {
     let v = 0
