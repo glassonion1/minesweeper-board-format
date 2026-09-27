@@ -169,7 +169,7 @@ should not mean two things.
 ## Reference implementation
 
 [`minesweeper-board.ts`](minesweeper-board.ts) — encode and decode, no
-dependencies, 62 lines including the types and the validation.
+dependencies, 69 lines including the types, the comments and the validation.
 
 [`check.ts`](check.ts) runs it against every number on this page.
 
