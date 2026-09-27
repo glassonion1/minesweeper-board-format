@@ -10,6 +10,12 @@
 const ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 
+// Part of the format, not a setting. The alphabet has 64 characters and 2^6
+// is 64, so six bits fit exactly into one of them. Six is also the ceiling:
+// seven would want 128 characters and RFC 3986 leaves only 66 that need no
+// escaping. Change this and you have a different format, not a tuned one.
+const BITS_PER_CHAR = 6
+
 /**
  * Two grids of the same shape. `mines[row][col]` is whether a mine is there,
  * `flagged[row][col]` whether a flag was on it when the game ended.
@@ -40,9 +46,9 @@ export function encode(board: Board): Params {
   // which packs as a zero — that is the padding rule, so there is no
   // special case for the last group.
   let mf = ''
-  for (let i = 0; i < bits.length; i += 6) {
+  for (let i = 0; i < bits.length; i += BITS_PER_CHAR) {
     let v = 0
-    for (let j = 0; j < 6; j++) v = (v << 1) | (bits[i + j] ? 1 : 0)
+    for (let j = 0; j < BITS_PER_CHAR; j++) v = (v << 1) | (bits[i + j] ? 1 : 0)
     mf += ALPHABET[v]
   }
   const width = String(board.mines[0].length).padStart(2, '0')
@@ -60,14 +66,17 @@ export function decode(b: string, mf: string): Board | null {
   if ([...mf].some((ch) => !ALPHABET.includes(ch))) return null
   const bits = [...mf].flatMap((ch) => {
     const v = ALPHABET.indexOf(ch)
-    return [5, 4, 3, 2, 1, 0].map((shift) => ((v >> shift) & 1) === 1)
+    // Its six binary digits, highest first — the order encode packed them in.
+    return [...v.toString(2).padStart(BITS_PER_CHAR, '0')].map((d) => d === '1')
   })
 
   const squares = width * height
   if (bits.length < squares) return null
   const mines = bits.slice(0, squares)
   const mineCount = mines.filter(Boolean).length
-  if (bits.length !== Math.ceil((squares + mineCount) / 6) * 6) return null
+  const expected =
+    Math.ceil((squares + mineCount) / BITS_PER_CHAR) * BITS_PER_CHAR
+  if (bits.length !== expected) return null
 
   // The flags are in the same order as the mines, so hand one out each time a
   // mine turns up. This is the inverse of the filter in encode.
