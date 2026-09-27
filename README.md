@@ -179,6 +179,18 @@ were — so there is no order to line up by hand.
 node --experimental-strip-types check.ts
 ```
 
+## Implementations
+
+The example at the top of this page is a real link. It opens a cleared 9×9
+board with eight flags on it, 12.5 seconds, 20 3BV:
+
+https://9revolution9.com/games/minesweeper?b=0909&mf=kAAQogCAIAiAAHdg&t=125
+
+That site writes the same three parameters when you share a board you cleared,
+and reads them back when someone opens the link.
+
+If you implement it somewhere else, open a pull request and add yourself here.
+
 ## Licence
 
 MIT. The format itself is nobody's to own — implement it however you like.
