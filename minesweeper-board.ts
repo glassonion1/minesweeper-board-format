@@ -57,34 +57,27 @@ export function decode(b: string, mf: string): Board | null {
   const height = Number(b.slice(2, 4))
   if (width < 1 || height < 1) return null
 
-  const bits: boolean[] = []
-  for (const ch of mf) {
+  if ([...mf].some((ch) => !ALPHABET.includes(ch))) return null
+  const bits = [...mf].flatMap((ch) => {
     const v = ALPHABET.indexOf(ch)
-    if (v < 0) return null
-    for (let j = 5; j >= 0; j--) bits.push(((v >> j) & 1) === 1)
-  }
+    return [5, 4, 3, 2, 1, 0].map((shift) => ((v >> shift) & 1) === 1)
+  })
 
-  const cells = width * height
-  if (bits.length < cells) return null
-  let mineCount = 0
-  for (let i = 0; i < cells; i++) if (bits[i]) mineCount++
-  if (bits.length !== Math.ceil((cells + mineCount) / 6) * 6) return null
+  const squares = width * height
+  if (bits.length < squares) return null
+  const mines = bits.slice(0, squares)
+  const mineCount = mines.filter(Boolean).length
+  if (bits.length !== Math.ceil((squares + mineCount) / 6) * 6) return null
 
-  // The flag bits run in the same order as the mines, so walking the squares
-  // in order and taking the next one each time a mine turns up puts them back.
-  const mines: boolean[][] = []
-  const flagged: boolean[][] = []
-  let next = cells
-  for (let row = 0; row < height; row++) {
-    const mineRow: boolean[] = []
-    const flagRow: boolean[] = []
-    for (let col = 0; col < width; col++) {
-      const isMine = bits[row * width + col]
-      mineRow.push(isMine)
-      flagRow.push(isMine ? bits[next++] : false)
-    }
-    mines.push(mineRow)
-    flagged.push(flagRow)
-  }
-  return { mines, flagged }
+  // The flags are in the same order as the mines, so hand one out each time a
+  // mine turns up. This is the inverse of the filter in encode.
+  const flagBits = bits.slice(squares, squares + mineCount)
+  let next = 0
+  const flagged = mines.map((isMine) => (isMine ? flagBits[next++] : false))
+
+  const grid = (flat: boolean[]) =>
+    Array.from({ length: height }, (_, row) =>
+      flat.slice(row * width, (row + 1) * width)
+    )
+  return { mines: grid(mines), flagged: grid(flagged) }
 }
