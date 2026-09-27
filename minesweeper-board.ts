@@ -1,4 +1,10 @@
-// A cleared Minesweeper board in a query string.
+// A finished Minesweeper game in a query string.
+//
+//   ?b=0909&mf=kAAQogCAIAiAAHdg&t=125
+//
+// b is the dimensions, mf the mines and the flags, t the time. This file
+// handles b and mf; t is a plain integer and needs no help. See README.md.
+//
 // No dependencies. MIT licensed — see LICENSE.
 
 const ALPHABET =
