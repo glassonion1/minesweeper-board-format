@@ -50,8 +50,10 @@ One bit stream, packed six bits to a character.
 [ N bits              ]  was this mine flagged?     in the same row-major order
 ```
 
-`N` is the number of mines. The stream is padded with zero bits to a multiple
-of six; a reader should accept the length and ignore the padding's value.
+`N` is the number of mines. The stream is padded to a multiple of six, and
+those padding bits are zero. They are part of the format rather than slack: a
+reader rejects a string whose tail is not zero, so a board has exactly one
+encoding and the string can be compared, deduplicated or used as a key.
 
 The alphabet is base64url:
 
@@ -127,9 +129,14 @@ in URLs and get edited by hand, so a reader should never throw.
 2. Every character of `mf` is in the alphabet.
 3. Count the set bits in the first `width × height` bits — that is `N`.
 4. The bit length is exactly `ceil((width × height + N) / 6) × 6`.
+5. Every bit after the first `width × height + N` is zero.
 
 Check the length before allocating anything, so that `b=9999` with a short
 `mf` costs nothing.
+
+Rule 5 is what makes the encoding canonical. Without it, flipping a padding bit
+gives a different string for the same board — 31 of them on a 9×9 — and two
+people sharing the same game could end up with links that do not match.
 
 A parameter you don't recognise is not an error. Ignore it and show the game.
 

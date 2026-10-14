@@ -106,6 +106,20 @@ ok('a character outside the alphabet is rejected', decode(b, `${mf}!`) === null)
 ok('a length that disagrees with b is rejected', decode('0808', mf) === null)
 ok('a width of zero is rejected', decode('0009', mf) === null)
 ok('empty strings are rejected', decode('', '') === null)
+ok('an extra character is rejected', decode(b, `${mf}A`) === null)
+
+// Rule 5. 81 squares and 10 mines leave five padding bits in the last
+// character, so without the rule there would be 31 more strings for this board.
+const alphabet =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+const head = mf.slice(0, -1)
+const tail = alphabet.indexOf(mf[mf.length - 1])
+let alternatives = 0
+for (let padding = 1; padding < 32; padding++) {
+  const ch = alphabet[(tail & 0b100000) | padding]
+  if (decode(b, head + ch) !== null) alternatives++
+}
+ok('a non-zero tail is rejected, so the board has one string', alternatives === 0)
 ok(
   'nothing throws',
   (() => {

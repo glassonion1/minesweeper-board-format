@@ -77,6 +77,10 @@ export function decode(b: string, mf: string): Board | null {
   const expected =
     Math.ceil((squares + mineCount) / BITS_PER_CHAR) * BITS_PER_CHAR
   if (bits.length !== expected) return null
+  // The padding is zero by definition, so a one in the tail is a second string
+  // for a board that already has one. Rejecting it keeps the string the board's
+  // only name.
+  if (bits.slice(squares + mineCount).some(Boolean)) return null
 
   // The flags are in the same order as the mines, so hand one out each time a
   // mine turns up. This is the inverse of the filter in encode.
